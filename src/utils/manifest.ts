@@ -1,75 +1,63 @@
-import { Source } from '../source';
-import { Config, CountryCode, ManifestWithConfig } from '../types';
-import { envGetAppId, envGetAppName } from './env';
-import { flagFromCountryCode, languageFromCountryCode } from './language';
+// src/utils/manifest.ts
 
-const typedEntries = <T extends object>(obj: T): [keyof T, T[keyof T]][] => (Object.entries(obj) as [keyof T, T[keyof T]][]);
+import { Manifest } from 'stremio-addon-sdk';
+import pkg from '../../package.json';
+import { Source } from '../types';
+import sources from '../sources';
+import { Config } from '../types';
 
-export const buildManifest = (sources: Source[], config: Config): ManifestWithConfig => {
-  const manifest: ManifestWithConfig = {
-    id: envGetAppId(),
-    version: '0.31.2', // x-release-please-version
-    name: envGetAppName(),
-    description: 'Provides HTTP URLs from streaming websites.',
-    resources: [
-      'stream',
-    ],
-    types: [
-      'movie',
-      'series',
-    ],
+export function buildManifest(config: Config): Manifest {
+  const manifest: Manifest = {
+    id: pkg.name,
+    version: pkg.version,
+    name: pkg.displayName || pkg.name,
+    description: pkg.description,
+    resources: ['stream'],
+    types: ['movie', 'series'],
     catalogs: [],
     idPrefixes: ['tt'],
     behaviorHints: {
       p2p: false,
       configurable: true,
-      configurationRequired: Object.keys(config).length === 0,
+      configurationRequired: false,
     },
-    config: [],
-    // @ts-expect-error inofficial prop needed for add-on claiming on https://stremio-addons.net
-    stremioAddonsConfig: {
-      issuer: 'https://stremio-addons.net',
-      signature: 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..D3-Wl15vxnYltwx8G52rRg.16-0VzsSgTvnv0wampIR8YPZsFhH8-7IgpuqxcUfC2p7kIJtuk8xQzrzqQOLXANEpaH_w7a4JOEpNo8wv28Zo_nMGCLOXgWbyGM3sQ-tfq6DCK3JU0ol6YMC1UDX2z_c.IOLlZyTYx_swutjYSTES0Q',
-    },
+    config: [] as any[],
   };
 
-  const countryCodeSources: Partial<Record<CountryCode, Source[]>> = {};
-  sources.forEach((handler) => {
-    handler.countryCodes.forEach(countryCode => countryCodeSources[countryCode] = [...(countryCodeSources[countryCode] ?? []), handler]);
-  });
-
-  const sortedLanguageSources = typedEntries(countryCodeSources)
-    .sort(([countryCodeA], [countryCodeB]) => countryCodeA.localeCompare(countryCodeB));
-
-  for (const [countryCode, sources] of sortedLanguageSources) {
+  // === per-source toggles ===
+  // for each handler in your sources array, expose a checkbox
+  for (const handler of sources) {
     manifest.config.push({
-      key: countryCode,
+      key: handler.id,
       type: 'checkbox',
-      title: `${languageFromCountryCode(countryCode)} ${flagFromCountryCode(countryCode)} (${(sources as Source[]).map(handler => handler.label).join(', ')})`,
-      ...(countryCode in config && { default: 'checked' }),
+      title: handler.label,
+      ...(handler.id in config && { default: 'checked' }),
     });
   }
 
+  // includeExternalUrls toggle
   manifest.config.push({
     key: 'includeExternalUrls',
     type: 'checkbox',
     title: 'Include external URLs in results',
-    ...('includeExternalUrls' in config && { default: 'checked' }),
+    ...(config.includeExternalUrls && { default: 'checked' }),
   });
 
+  // mediaFlow proxy URL textbox
   manifest.config.push({
     key: 'mediaFlowProxyUrl',
     type: 'text',
     title: 'MediaFlow Proxy URL',
-    default: config['mediaFlowProxyUrl'] ?? '',
+    default: config.mediaFlowProxyUrl || '',
   });
 
+  // mediaFlow proxy password textbox
   manifest.config.push({
     key: 'mediaFlowProxyPassword',
     type: 'password',
     title: 'MediaFlow Proxy Password',
-    default: config['mediaFlowProxyPassword'] ?? '',
+    default: config.mediaFlowProxyPassword || '',
   });
 
   return manifest;
-};
+}
