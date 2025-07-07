@@ -1,22 +1,22 @@
 // src/types.ts
 
 /**
- * A “flat” config map: keys are arbitrary strings (your source IDs 
- * such as "soaper", "vidsrc", or the global flags), values are 
- * either boolean (for checkboxes) or string (for text/password fields).
+ * A “flat” config map: keys are arbitrary strings
+ * (e.g. "soaper", "vidsrc", or any other flag),
+ * values can be boolean, string, or really anything.
  */
-export type Config = Partial<Record<string, boolean | string>>;
+export type Config = {
+  [key: string]: any;
+};
 
 /**
- * Describe one of your scraping handlers / sources.
- * - `id` is the unique key (matches the checkbox key in the manifest).
- * - `label` is the human-readable title for that checkbox.
- * - `countryCodes` is now optional—add it only if your source needs it.
- * - Extend this interface with any other properties your handlers use.
+ * Describes one of your scraping handlers / sources.
+ * - `id`: unique key, matches the manifest checkbox key.
+ * - `label`: human‑readable title for the checkbox.
+ * You can add *any* other props here too.
  */
 export interface Source {
   id: string;
   label: string;
-  countryCodes?: string[];
-  // …and any other fields your source modules rely on
+  [prop: string]: any;
 }
