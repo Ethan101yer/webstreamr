@@ -1,53 +1,22 @@
-import { Manifest, ManifestConfig } from 'stremio-addon-sdk';
+// src/types.ts
 
-export interface Context {
-  hostUrl: URL;
-  id: string;
-  ip?: string;
-  config: Config;
-}
-
-export type ManifestWithConfig = Manifest & { config: ManifestConfig[] };
-
+/**
+ * A “flat” config map: keys are arbitrary strings (your source IDs 
+ * such as "soaper", "vidsrc", or the global flags), values are 
+ * either boolean (for checkboxes) or string (for text/password fields).
+ */
 export type Config = Partial<Record<string, boolean | string>>;
 
-export enum CountryCode {
-  de = 'de',
-  en = 'en',
-  es = 'es',
-  fr = 'fr',
-  it = 'it',
-  mx = 'mx',
-}
-
-export enum BlockedReason {
-  cloudflare_challenge = 'cloudflare_challenge',
-  flaresolverr_failed = 'flaresolverr_failed',
-  unknown = 'unknown',
-}
-
-export interface Meta {
-  bytes?: number;
-  countryCode: CountryCode;
-  height?: number;
-  title?: string;
-}
-
-export enum Format {
-  hls = 'hls',
-  mp4 = 'mp4',
-  unknown = 'unknown',
-}
-
-export interface UrlResult {
-  url: URL;
-  format: Format;
-  isExternal?: boolean;
-  error?: unknown;
+/**
+ * Describe one of your scraping handlers / sources.
+ * - `id` is the unique key (matches the checkbox key in the manifest).
+ * - `label` is the human-readable title for that checkbox.
+ * - `countryCodes` is now optional—add it only if your source needs it.
+ * - Extend this interface with any other properties your handlers use.
+ */
+export interface Source {
+  id: string;
   label: string;
-  sourceId: string;
-  ttl?: number;
-  meta: Meta;
-  notWebReady?: boolean;
-  requestHeaders?: Record<string, string>;
+  countryCodes?: string[];
+  // …and any other fields your source modules rely on
 }
